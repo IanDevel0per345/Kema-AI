@@ -6,10 +6,6 @@
  * Local development uses an in-memory store.
  */
 
-import {
-  getMaintenanceConfig as sdkGetMaintenanceConfig,
-  setMaintenanceConfig as sdkSetMaintenanceConfig,
-} from '@kortix/sdk';
 import { createClient, type EdgeConfigClient } from '@vercel/edge-config';
 
 // ---------------------------------------------------------------------------
@@ -129,11 +125,16 @@ export async function getMaintenanceConfig(): Promise<MaintenanceConfig> {
   if (!process.env.EDGE_CONFIG) return { ...memoryStore };
 
   try {
-    const databaseConfig = await sdkGetMaintenanceConfig<MaintenanceConfig>({
-      backendUrl: backendUrl(),
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2000);
+    const res = await fetch(`${backendUrl()}/system/maintenance`, {
+      headers: { Accept: 'application/json' },
       cache: 'no-store',
-      signal: AbortSignal.timeout(2_000),
+      signal: controller.signal,
     });
+    clearTimeout(timeoutId);
+    if (!res.ok) throw new Error(`Maintenance API returned ${res.status}`);
+    const databaseConfig = (await res.json()) as MaintenanceConfig;
     const edgeConfig = await readEdgeConfig().catch(() => null);
     if (JSON.stringify(edgeConfig) !== JSON.stringify(databaseConfig)) {
       await writeEdgeConfig(databaseConfig).catch((error) => {
@@ -188,10 +189,17 @@ export async function setMaintenanceConfig(
     return { ...memoryStore };
   }
 
-  const saved = await sdkSetMaintenanceConfig<MaintenanceConfig>(config, {
-    backendUrl: backendUrl(),
-    accessToken,
+  const res = await fetch(`${backendUrl()}/system/maintenance`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(config),
   });
+  if (!res.ok) throw new Error(`Maintenance API update returned ${res.status}`);
+  const saved = (await res.json()) as MaintenanceConfig;
   await writeEdgeConfig(saved);
   return saved;
 }

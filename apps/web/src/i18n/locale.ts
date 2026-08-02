@@ -1,4 +1,4 @@
-import { defaultLocale, locales, type Locale } from './config';
+import { defaultLocale, locales, type Locale } from './locales';
 
 export const LOCALE_CHANGE_EVENT = 'locale-change';
 

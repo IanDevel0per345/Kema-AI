@@ -1,4 +1,4 @@
-import { locales, type Locale } from '@/i18n/config';
+import { locales, type Locale } from '@/i18n/locales';
 import { getMaintenanceConfig } from '@/lib/maintenance-store';
 import { MAINTENANCE_BYPASS_COOKIE, verifyBypassToken } from '@/lib/maintenance-bypass';
 import {
@@ -336,20 +336,28 @@ export async function middleware(request: NextRequest) {
   // IMPORTANT: NEXT_PUBLIC_ vars are inlined at build time by Next.js, so in
   // Docker containers they contain placeholder values. We MUST use runtime
   // env vars (SUPABASE_URL, SUPABASE_ANON_KEY) with fallback to NEXT_PUBLIC_.
-  //
-  // SUPABASE_SERVER_URL is the internal Docker network URL (e.g. http://supabase-kong:8000)
-  // used for server-side auth calls. SUPABASE_URL / NEXT_PUBLIC_SUPABASE_URL is the
-  // public-facing URL that the browser uses. The middleware runs server-side inside
-  // the Docker container, so it needs the internal URL to reach Supabase.
-  const supabaseUrl =
+  const rawSupabaseUrl =
     process.env.SUPABASE_SERVER_URL ||
     process.env.SUPABASE_URL ||
     process.env.KORTIX_PUBLIC_SUPABASE_URL ||
-    process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    '';
+
+  const isValidUrl = (url: string) => {
+    try {
+      const parsed = new URL(url);
+      return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  };
+
+  const supabaseUrl = isValidUrl(rawSupabaseUrl) ? rawSupabaseUrl : 'http://localhost:54321';
   const supabaseAnonKey =
     process.env.SUPABASE_ANON_KEY ||
     process.env.KORTIX_PUBLIC_SUPABASE_ANON_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    'dummy-key-to-prevent-crash';
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookieOptions: {
       name: KORTIX_SUPABASE_AUTH_COOKIE,
