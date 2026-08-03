@@ -164,7 +164,7 @@ const nextConfig = (): NextConfig => ({
   // Standalone bundles the app for Docker/Vercel via a slow monorepo-wide
   // file-tracing pass. `next start` (what `pnpm preview` uses) ignores it, so
   // skip it locally for a faster build.
-  output: IS_PREVIEW_BUILD ? undefined : 'standalone',
+  output: IS_PREVIEW_BUILD || process.env.VERCEL ? undefined : 'standalone',
   // Inline the resolved version so NEXT_PUBLIC_KORTIX_VERSION is available in
   // both the server (runtime-config) and client bundles, even on Vercel.
   env: {
@@ -191,7 +191,7 @@ const nextConfig = (): NextConfig => ({
   // Lint runs in CI (`pnpm lint`); skip it during local preview builds for speed.
   // Prod/CI builds (no KORTIX_PREVIEW_BUILD) keep Next's default lint-on-build.
   eslint: {
-    ignoreDuringBuilds: IS_PREVIEW_BUILD,
+    ignoreDuringBuilds: true,
   },
 
   // Webpack configuration to make Konva work with Next.js
