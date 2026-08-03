@@ -40,13 +40,15 @@ proot-distro login ubuntu -- bash -c "
 
   # Instala dependencias do backend
   echo '📦 Instalando pacotes do backend (Bun)...'
-  cd /data/data/com.termux/files/home/Kema-AI/apps/api 2>/dev/null || cd /root/Kema-AI/apps/api 2>/dev/null || cd \$(find / -name apps -type d 2>/dev/null | grep Kema-AI | head -n 1)/api
+  # Busca a raiz do projeto (onde está o package.json principal)
+  cd \$(find / -name Kema-AI -type d 2>/dev/null | head -n 1)
   
+  # Instala as dependências de todo o monorepo
   bun install
 
-  # Roda a API no fundo
-  echo '🚀 Ligando a API...'
-  nohup bun run dev > api.log 2>&1 &
+  echo '🚀 Ligando apenas a API...'
+  # Roda apenas o backend (dev:api)
+  nohup bun run dev:api > api.log 2>&1 &
 
   # Liga o Cloudflare tunnel apontando pra API
   echo '🌐 Criando túnel público...'
