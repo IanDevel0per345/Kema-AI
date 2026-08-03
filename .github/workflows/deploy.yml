@@ -23,6 +23,11 @@ jobs:
         with:
           node-version: 22
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
       - name: Install pnpm
         uses: pnpm/action-setup@v3
         with:
