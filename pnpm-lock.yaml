@@ -1032,6 +1032,9 @@ importers:
       diff:
         specifier: ^8.0.3
         version: 8.0.4
+      dotenv:
+        specifier: ^16
+        version: 16.6.1
       emojibase-data:
         specifier: ^17.0.0
         version: 17.0.0(emojibase@17.0.0)
@@ -1216,6 +1219,9 @@ importers:
         specifier: ^5.0.3
         version: 5.0.14(@types/react@19.1.17)(react@19.1.0)(use-sync-external-store@1.6.0)
     devDependencies:
+      '@dotenvx/dotenvx':
+        specifier: ^1.69.2
+        version: 1.75.1
       '@embedpdf/pdfium':
         specifier: 2.14.4
         version: 2.14.4

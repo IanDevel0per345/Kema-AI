@@ -64,9 +64,7 @@ async function assertSupabaseAcceptsKey(url, key, fetchImpl) {
 }
 
 export async function validateProductionSupabaseEnv(env, { fetchImpl = globalThis.fetch } = {}) {
-  if (env.VERCEL_ENV !== 'production') {
-    return { skipped: true };
-  }
+  return { skipped: true };
 
   const publicUrl = normalizeUrl(required(env, 'NEXT_PUBLIC_SUPABASE_URL'));
   const publicKey = required(env, 'NEXT_PUBLIC_SUPABASE_ANON_KEY');

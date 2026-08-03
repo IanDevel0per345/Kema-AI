@@ -628,7 +628,7 @@ function AuthCardForm({
                   disabled={pending}
                   className="hover:text-foreground -my-2 py-2 underline-offset-4 transition-colors hover:underline disabled:opacity-50"
                 >
-                  {pendingAction === 'code' ? 'Sending…' : 'Email me a code instead'}
+                  {pendingAction === 'code' ? 'Sending…' : 'Email me a link instead'}
                 </button>
               )}
             </p>
@@ -647,7 +647,7 @@ function AuthCardForm({
     );
   }
 
-  /* ── Code step ── */
+  /* ── Code / Magic Link step ── */
   if (step === 'code') {
     return (
       <>
@@ -656,8 +656,8 @@ function AuthCardForm({
             title="Check your email"
             description={
               <>
-                We sent a code to{' '}
-                <span className="text-foreground font-medium break-words">{sentEmail}</span>
+                We sent a secure link to{' '}
+                <span className="text-foreground font-medium break-words">{sentEmail}</span>. Click the link to sign in.
               </>
             }
           />
@@ -666,73 +666,62 @@ function AuthCardForm({
         <motion.div {...rise(0.06)}>
           {info && <InfoStrip message={info} />}
 
-          <CodeInput
-            value={code}
-            onChange={(next) => {
-              if (errorMessage) setErrorMessage(null);
-              setCode(next);
-            }}
-            disabled={verifying}
-            invalid={!!errorMessage}
-          />
+          <div className="bg-muted/50 border-border flex flex-col items-center justify-center rounded-lg border py-8 text-center">
+            <div className="bg-background border-border flex size-12 items-center justify-center rounded-full border shadow-sm mb-4">
+              <svg className="size-5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <p className="text-sm font-medium text-foreground">Waiting for verification...</p>
+            <p className="text-xs text-muted-foreground mt-1 px-4">Open the email on this or another device to continue.</p>
+          </div>
 
           <div className="text-muted-foreground mt-6 space-y-2 text-sm">
-            {verifying ? (
-              <div className="flex items-center gap-2">
-                <Loading className="text-muted-foreground size-4 shrink-0" />
-                <span>Verifying…</span>
-              </div>
-            ) : (
-              <>
-                <p>
-                  Didn&apos;t receive a code?{' '}
-                  {resendIn > 0 ? (
-                    <span className="tabular-nums">Resend in {resendIn}</span>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={handleResend}
-                      disabled={pending}
-                      className="text-foreground underline-offset-4 hover:underline disabled:opacity-50"
-                    >
-                      {pendingAction === 'resend' ? 'Sending…' : 'Resend'}
-                    </button>
-                  )}
-                </p>
-                {/* The two ways off this step, side by side — same weight, same
-                    dialect as the resend line above. `-my-2 py-2` grows the hit
-                    area to ~40px without opening a gap between the rows. */}
-                <p className="flex items-center gap-2">
+            <p>
+              Didn&apos;t receive the email?{' '}
+              {resendIn > 0 ? (
+                <span className="tabular-nums">Resend in {resendIn}</span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleResend}
+                  disabled={pending}
+                  className="text-foreground underline-offset-4 hover:underline disabled:opacity-50"
+                >
+                  {pendingAction === 'resend' ? 'Sending…' : 'Resend'}
+                </button>
+              )}
+            </p>
+            <p className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={goToEntry}
+                className="hover:text-foreground -my-2 py-2 underline-offset-4 transition-colors hover:underline"
+              >
+                Use a different email
+              </button>
+              {passwordEnabled && (
+                <>
+                  <span aria-hidden className="text-muted-foreground/40 select-none">
+                    ·
+                  </span>
                   <button
                     type="button"
-                    onClick={goToEntry}
-                    className="hover:text-foreground -my-2 py-2 underline-offset-4 transition-colors hover:underline"
+                    onClick={() => void goToPassword()}
+                    disabled={pending}
+                    className="hover:text-foreground -my-2 py-2 underline-offset-4 transition-colors hover:underline disabled:opacity-50"
                   >
-                    Use a different email
+                    {pendingAction === 'password' ? 'One moment…' : 'Use password instead'}
                   </button>
-                  {passwordEnabled && (
-                    <>
-                      <span aria-hidden className="text-muted-foreground/40 select-none">
-                        ·
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => void goToPassword()}
-                        disabled={pending}
-                        className="hover:text-foreground -my-2 py-2 underline-offset-4 transition-colors hover:underline disabled:opacity-50"
-                      >
-                        {pendingAction === 'password' ? 'One moment…' : 'Use password instead'}
-                      </button>
-                    </>
-                  )}
-                </p>
-              </>
-            )}
+                </>
+              )}
+            </p>
           </div>
         </motion.div>
       </>
     );
   }
+
 
   /* ── Credentials step (password, with email-code alternative) ── */
   if (step === 'credentials') {
@@ -809,7 +798,7 @@ function AuthCardForm({
               {pendingAction === 'code' ? (
                 <Loading className="text-foreground! size-4 shrink-0" />
               ) : null}
-              Email me a code instead
+              Email me a link instead
             </Button>
           )}
         </motion.div>

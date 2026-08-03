@@ -60,6 +60,51 @@ export async function proxyToOpenRouter(
   apiKey = config.OPENROUTER_API_KEY,
   traceHeaders: Record<string, string> = {},
 ): Promise<Response> {
+  const modelId = body.model as string;
+
+  // TERMUX LOCAL INTERCEPT: 
+  // If the user requested a "metric" model, hijack it and route it locally to Ollama
+  if (modelId.toLowerCase().includes('metric')) {
+    console.log(`[LLM] Termux Intercept: Routing ${modelId} to local Ollama (gemma3:4b)`);
+    
+    // Injeta o system prompt diferenciado baseado no modelo
+    const messages = Array.isArray(body.messages) ? body.messages : [];
+    let systemPrompt = "You are a helpful AI assistant.";
+    
+    if (modelId.includes('3.5-flash')) {
+      systemPrompt = "You are a concise AI. Answer directly and briefly.";
+    } else if (modelId.includes('3.5')) {
+      systemPrompt = "You are an advanced reasoning AI. Think step-by-step before answering.";
+    }
+    
+    // Prepend system prompt
+    const localMessages = [
+      { role: "system", content: systemPrompt },
+      ...messages.filter(m => m.role !== 'system')
+    ];
+
+    const localBody = {
+      ...body,
+      model: "gemma",
+      messages: localMessages,
+    };
+
+    try {
+      const response = await fetch("http://localhost:11434/v1/chat/completions", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(localBody),
+      });
+      return response;
+    } catch (e) {
+      console.error("[LLM] Falha ao conectar no Ollama local", e);
+      return new Response(JSON.stringify({ error: 'Local Ollama not running on port 11434' }), {
+        status: 503,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+  }
+
   if (!apiKey) {
     return new Response(JSON.stringify({ error: 'OpenRouter API key not configured' }), {
       status: 503,
@@ -67,7 +112,6 @@ export async function proxyToOpenRouter(
     });
   }
 
-  const modelId = body.model as string;
   const openrouterId = resolveOpenRouterId(modelId);
 
   // Rewrite the model field to the actual OpenRouter model ID
