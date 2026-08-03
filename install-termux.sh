@@ -1,30 +1,62 @@
 #!/bin/bash
-echo "🚀 Iniciando a instalação do Ecossistema AI no Termux..."
 
-# 1. Atualiza o sistema e instala pacotes base
+# 1. Permissão de armazenamento e pacotes essenciais
+echo "📱 Preparando o Termux..."
+termux-setup-storage
 pkg update -y && pkg upgrade -y
 pkg install proot-distro git curl wget jq unzip -y
 
-# 2. Instala a imagem base do Ubuntu
-echo "📦 Instalando o Ubuntu (proot-distro)..."
+# 2. Clona o repositório
+echo "📥 Clonando o projeto Kortix/Kema-AI..."
+git clone https://github.com/IanDevel0per345/Kema-AI.git
+cd Kema-AI
+
+# 3. Instala a imagem base do Ubuntu
+echo "📦 Instalando o Ubuntu interno (proot-distro)..."
 proot-distro install ubuntu
 
-# 3. Instala o Bun, Ollama e Node.js dentro do Ubuntu
-echo "⚙️ Configurando o Ubuntu interno..."
+# 4. Configura tudo dentro do Ubuntu com um único comando gigante
+echo "⚙️ Instalando ferramentas e subindo servidores no Ubuntu..."
 proot-distro login ubuntu -- bash -c "
-  # Instala o Bun
+  # Atualiza pacotes internos
+  apt update && apt install curl wget git -y
+
+  # Instala Bun
   curl -fsSL https://bun.sh/install | bash
-  
-  # Instala o Ollama (para rodar os modelos locais)
+  export PATH=\"\$HOME/.bun/bin:\$PATH\"
+
+  # Instala Ollama
   curl -fsSL https://ollama.com/install.sh | sh
-"
 
-# 4. Baixa o modelo Gemma3 4b no Ollama
-echo "🧠 Baixando o modelo Gemma3 4b (Isso pode demorar dependendo da internet)..."
-proot-distro login ubuntu -- bash -c "
-  nohup ollama serve > /dev/null 2>&1 & 
+  # Instala Cloudflared (para o Túnel)
+  wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-arm64
+  chmod +x cloudflared-linux-arm64
+
+  # Liga o servidor Ollama em segundo plano e baixa o modelo gemma
+  echo '🧠 Preparando IA (Ollama + Gemma)...'
+  nohup ollama serve > ollama.log 2>&1 & 
   sleep 5
-  ollama pull gemma
-"
+  # ollama pull gemma (descomente esta linha para baixar na primeira vez, pode demorar muito)
 
-echo "✅ Instalação concluída! O seu celular agora tem Ubuntu, Bun e um Motor de Inteligência Artificial Local."
+  # Instala dependencias do backend
+  echo '📦 Instalando pacotes do backend (Bun)...'
+  cd /data/data/com.termux/files/home/Kema-AI/apps/api 2>/dev/null || cd /root/Kema-AI/apps/api 2>/dev/null || cd \$(find / -name apps -type d 2>/dev/null | grep Kema-AI | head -n 1)/api
+  
+  bun install
+
+  # Roda a API no fundo
+  echo '🚀 Ligando a API...'
+  nohup bun run dev > api.log 2>&1 &
+
+  # Liga o Cloudflare tunnel apontando pra API
+  echo '🌐 Criando túnel público...'
+  nohup /root/cloudflared-linux-arm64 tunnel --url http://localhost:8008 > /root/tunnel.log 2>&1 &
+
+  # Espera o Cloudflare gerar o link e exibe na tela
+  sleep 10
+  echo '==================================================='
+  echo '✅ TUDO PRONTO E RODANDO!'
+  echo '🔗 Seu link da Vercel (NEXT_PUBLIC_BACKEND_URL) é:'
+  grep -o 'https://.*\.trycloudflare\.com' /root/tunnel.log
+  echo '==================================================='
+"
