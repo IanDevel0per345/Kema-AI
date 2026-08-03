@@ -38,7 +38,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build packages
-        run: pnpm build
+        run: pnpm --filter "{apps/web}..." build
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
